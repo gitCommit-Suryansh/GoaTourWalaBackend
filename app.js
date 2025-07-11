@@ -10,8 +10,10 @@ const categoryRoutes = require('./routes/categoryRoutes.js');
 
 
 
-app.use(cors({ origin: ['*', 'https://goa-tour-wala-frontend.vercel.app/'], credentials: true }));
-app.use(express.json());
+app.use(cors({
+    origin: 'https://goa-tour-wala-frontend.vercel.app',
+    credentials: true,
+  }));app.use(express.json());
 
 connectToDB();
 
