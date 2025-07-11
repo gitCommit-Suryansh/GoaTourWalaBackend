@@ -10,7 +10,7 @@ const categoryRoutes = require('./routes/categoryRoutes.js');
 
 
 
-app.use(cors());
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 connectToDB();
