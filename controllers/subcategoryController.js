@@ -2,7 +2,8 @@ const Subcategory = require("../models/subcategory.js");
 const Category = require("../models/category.js");
 const slugify = require("slugify");
 const cloudinary=require('../config/cloudinary-config.js')
-const { getPublicIdFromUrl } = require("../utils/cloudinaryHelpers.js");
+// const { getPublicIdFromUrl } = require("../utils/cloudinaryHelpers.js");
+// const { cloudinary } = require("../utils/cloudinary"); // adjust your import
 
 
 // Create Subcategory
@@ -96,10 +97,187 @@ exports.getBySlugName = async (req, res) => {
   }
 };
 
+// exports.updateSubcategory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const {
+//       name,
+//       description,
+//       price,
+//       duration,
+//       features,
+//       details,
+//       galleryImages, // updated gallery sent from frontend
+//     } = req.body;
+
+//     const existingSub = await Subcategory.findById(id);
+//     if (!existingSub) {
+//       return res.status(404).json({ error: "Subcategory not found" });
+//     }
+
+//     const updateData = {
+//       name,
+//       description,
+//       price,
+//       duration,
+//       features: features ? JSON.parse(features) : [],
+//       details: details ? JSON.parse(details) : [],
+//       galleryImages: galleryImages ? JSON.parse(galleryImages) : [],
+//     };
+
+//     // ❌ Delete old banner image if replaced
+//     if (req.files?.bannerImage?.[0] && existingSub.bannerImage) {
+//       const publicId = getPublicIdFromUrl(existingSub.bannerImage);
+//       if (publicId) await cloudinary.uploader.destroy(publicId);
+//     }
+
+//     // ✅ Upload new banner image
+//     if (req.files?.bannerImage?.[0]) {
+//       const result = await cloudinary.uploader.upload(
+//         req.files.bannerImage[0].path,
+//         { folder: "GOA-TOUR-WALA" }
+//       );
+//       updateData.bannerImage = result.secure_url;
+//     } else {
+//       updateData.bannerImage = existingSub.bannerImage;
+//     }
+
+//     // ❌ Delete removed gallery images
+//     const oldGallery = existingSub.galleryImages || [];
+//     const updatedGallery = updateData.galleryImages;
+//     const removedImages = oldGallery.filter((img) => !updatedGallery.includes(img));
+
+//     for (const url of removedImages) {
+//       const publicId = getPublicIdFromUrl(url);
+//       if (publicId) await cloudinary.uploader.destroy(publicId);
+//     }
+
+//     // ✅ Upload newly added gallery images
+//     if (req.files?.newGalleryImages?.length) {
+//       const uploaded = await Promise.all(
+//         req.files.newGalleryImages.map((img) =>
+//           cloudinary.uploader.upload(img.path, { folder: "GOA-TOUR-WALA" })
+//         )
+//       );
+//       const newGalleryUrls = uploaded.map((r) => r.secure_url);
+//       updateData.galleryImages = [...updatedGallery, ...newGalleryUrls];
+//     }
+
+//     const updated = await Subcategory.findByIdAndUpdate(id, updateData, {
+//       new: true,
+//     });
+
+//     res.status(200).json({
+//       message: "Subcategory updated successfully",
+//       subcategory: updated,
+//     });
+//   } catch (err) {
+//     console.error("Update Subcategory Error:", err);
+//     res.status(500).json({ error: "Failed to update subcategory" });
+//   }
+// };
+
+const getPublicIdFromUrl = (url) => {
+  try {
+    const parts = url.split("/");
+    const fileWithExt = parts[parts.length - 1]; // e.g. 'abc123.jpg'
+    const publicId = fileWithExt.substring(0, fileWithExt.lastIndexOf(".")); // 'abc123'
+    return `GOA-TOUR-WALA/${publicId}`; // full path including folder
+  } catch (err) {
+    return null;
+  }
+};
+
+// exports.updateSubcategory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const {
+//       name,
+//       description,
+//       price,
+//       duration,
+//       features,
+//       details,
+//       galleryImages, // gallery images retained
+//     } = req.body;
+
+//     const existingSub = await Subcategory.findById(id);
+//     if (!existingSub) {
+//       return res.status(404).json({ error: "Subcategory not found" });
+//     }
+
+//     const updateData = {
+//       name,
+//       description,
+//       price,
+//       duration,
+//       features: features ? JSON.parse(features) : [],
+//       details: details ? JSON.parse(details) : [],
+//       galleryImages: galleryImages ? JSON.parse(galleryImages) : [],
+//     };
+
+//     // ✅ Delete old banner image if replaced
+//     if (req.files?.bannerImage?.[0] && existingSub.bannerImage) {
+//       const publicId = getPublicIdFromUrl(existingSub.bannerImage);
+//       if (publicId) {
+//         await cloudinary.uploader.destroy(publicId);
+//       }
+//     }
+
+//     // ✅ Upload new banner image if any
+//     if (req.files?.bannerImage?.[0]) {
+//       const result = await cloudinary.uploader.upload(req.files.bannerImage[0].path, {
+//         folder: "GOA-TOUR-WALA",
+//       });
+//       updateData.bannerImage = result.secure_url;
+//     } else {
+//       updateData.bannerImage = existingSub.bannerImage;
+//     }
+
+//     // ✅ Delete removed gallery images
+//     const oldGallery = existingSub.galleryImages || [];
+//     const updatedGallery = updateData.galleryImages;
+
+//     const removedImages = oldGallery.filter((img) => !updatedGallery.includes(img));
+//     for (const url of removedImages) {
+//       const publicId = getPublicIdFromUrl(url);
+//       if (publicId) await cloudinary.uploader.destroy(publicId);
+//     }
+
+//     // ✅ Upload new gallery images and overwrite
+//     let newGalleryUrls = [];
+//     if (req.files?.newGalleryImages?.length) {
+//       const uploads = await Promise.all(
+//         req.files.newGalleryImages.map((img) =>
+//           cloudinary.uploader.upload(img.path, { folder: "GOA-TOUR-WALA" })
+//         )
+//       );
+//       newGalleryUrls = uploads.map((r) => r.secure_url);
+//     }
+
+//     // Final updated gallery = retained + new (no duplication)
+//     updateData.galleryImages = [...updatedGallery, ...newGalleryUrls];
+
+//     const updated = await Subcategory.findByIdAndUpdate(id, updateData, {
+//       new: true,
+//     });
+
+//     res.status(200).json({
+//       message: "Subcategory updated successfully",
+//       subcategory: updated,
+//     });
+//   } catch (err) {
+//     console.error("Update Subcategory Error:", err);
+//     res.status(500).json({ error: "Failed to update subcategory" });
+//   }
+// };
+
+
 exports.updateSubcategory = async (req, res) => {
   try {
     const { id } = req.params;
-
     const {
       name,
       description,
@@ -107,13 +285,15 @@ exports.updateSubcategory = async (req, res) => {
       duration,
       features,
       details,
-      galleryImages, // updated gallery sent from frontend
+      galleryImages,
     } = req.body;
 
     const existingSub = await Subcategory.findById(id);
     if (!existingSub) {
       return res.status(404).json({ error: "Subcategory not found" });
     }
+
+    const parsedGallery = galleryImages ? JSON.parse(galleryImages) : [];
 
     const updateData = {
       name,
@@ -122,46 +302,44 @@ exports.updateSubcategory = async (req, res) => {
       duration,
       features: features ? JSON.parse(features) : [],
       details: details ? JSON.parse(details) : [],
-      galleryImages: galleryImages ? JSON.parse(galleryImages) : [],
+      bannerImage: existingSub.bannerImage, // default, overwrite below
     };
 
-    // ❌ Delete old banner image if replaced
+    // ✅ Delete old banner image if replaced
     if (req.files?.bannerImage?.[0] && existingSub.bannerImage) {
       const publicId = getPublicIdFromUrl(existingSub.bannerImage);
       if (publicId) await cloudinary.uploader.destroy(publicId);
     }
 
-    // ✅ Upload new banner image
+    // ✅ Upload new banner image if any
     if (req.files?.bannerImage?.[0]) {
-      const result = await cloudinary.uploader.upload(
-        req.files.bannerImage[0].path,
-        { folder: "GOA-TOUR-WALA" }
-      );
+      const result = await cloudinary.uploader.upload(req.files.bannerImage[0].path, {
+        folder: "GOA-TOUR-WALA",
+      });
       updateData.bannerImage = result.secure_url;
-    } else {
-      updateData.bannerImage = existingSub.bannerImage;
     }
 
-    // ❌ Delete removed gallery images
+    // ✅ Delete removed gallery images
     const oldGallery = existingSub.galleryImages || [];
-    const updatedGallery = updateData.galleryImages;
-    const removedImages = oldGallery.filter((img) => !updatedGallery.includes(img));
-
-    for (const url of removedImages) {
+    const removed = oldGallery.filter((url) => !parsedGallery.includes(url));
+    for (const url of removed) {
       const publicId = getPublicIdFromUrl(url);
       if (publicId) await cloudinary.uploader.destroy(publicId);
     }
 
-    // ✅ Upload newly added gallery images
+    // ✅ Upload new gallery images
+    let newGalleryUrls = [];
     if (req.files?.newGalleryImages?.length) {
-      const uploaded = await Promise.all(
-        req.files.newGalleryImages.map((img) =>
-          cloudinary.uploader.upload(img.path, { folder: "GOA-TOUR-WALA" })
+      const uploads = await Promise.all(
+        req.files.newGalleryImages.map((file) =>
+          cloudinary.uploader.upload(file.path, { folder: "GOA-TOUR-WALA" })
         )
       );
-      const newGalleryUrls = uploaded.map((r) => r.secure_url);
-      updateData.galleryImages = [...updatedGallery, ...newGalleryUrls];
+      newGalleryUrls = uploads.map((r) => r.secure_url);
     }
+
+    // ✅ Final gallery = retained + new (without duplication)
+    updateData.galleryImages = [...parsedGallery, ...newGalleryUrls];
 
     const updated = await Subcategory.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -176,4 +354,3 @@ exports.updateSubcategory = async (req, res) => {
     res.status(500).json({ error: "Failed to update subcategory" });
   }
 };
-
