@@ -2,8 +2,7 @@ const Subcategory = require("../models/subcategory.js");
 const Category = require("../models/category.js");
 const slugify = require("slugify");
 const cloudinary=require('../config/cloudinary-config.js')
-// const { getPublicIdFromUrl } = require("../utils/cloudinaryHelpers.js");
-// const { cloudinary } = require("../utils/cloudinary"); // adjust your import
+// const getPublicIdFromUrl = require("../utils/cloudinaryHelpers.js");
 
 
 // Create Subcategory
@@ -178,16 +177,7 @@ exports.getBySlugName = async (req, res) => {
 //   }
 // };
 
-const getPublicIdFromUrl = (url) => {
-  try {
-    const parts = url.split("/");
-    const fileWithExt = parts[parts.length - 1]; // e.g. 'abc123.jpg'
-    const publicId = fileWithExt.substring(0, fileWithExt.lastIndexOf(".")); // 'abc123'
-    return `GOA-TOUR-WALA/${publicId}`; // full path including folder
-  } catch (err) {
-    return null;
-  }
-};
+
 
 // exports.updateSubcategory = async (req, res) => {
 //   try {
@@ -285,15 +275,13 @@ exports.updateSubcategory = async (req, res) => {
       duration,
       features,
       details,
-      galleryImages,
+      galleryImages, // JSON string of retained images
     } = req.body;
 
     const existingSub = await Subcategory.findById(id);
     if (!existingSub) {
       return res.status(404).json({ error: "Subcategory not found" });
     }
-
-    const parsedGallery = galleryImages ? JSON.parse(galleryImages) : [];
 
     const updateData = {
       name,
@@ -302,44 +290,49 @@ exports.updateSubcategory = async (req, res) => {
       duration,
       features: features ? JSON.parse(features) : [],
       details: details ? JSON.parse(details) : [],
-      bannerImage: existingSub.bannerImage, // default, overwrite below
     };
 
-    // ✅ Delete old banner image if replaced
-    if (req.files?.bannerImage?.[0] && existingSub.bannerImage) {
-      const publicId = getPublicIdFromUrl(existingSub.bannerImage);
-      if (publicId) await cloudinary.uploader.destroy(publicId);
-    }
+    const retainedGallery = galleryImages ? JSON.parse(galleryImages) : [];
+    const previousGallery = existingSub.galleryImages || [];
 
-    // ✅ Upload new banner image if any
-    if (req.files?.bannerImage?.[0]) {
-      const result = await cloudinary.uploader.upload(req.files.bannerImage[0].path, {
-        folder: "GOA-TOUR-WALA",
-      });
-      updateData.bannerImage = result.secure_url;
-    }
-
-    // ✅ Delete removed gallery images
-    const oldGallery = existingSub.galleryImages || [];
-    const removed = oldGallery.filter((url) => !parsedGallery.includes(url));
-    for (const url of removed) {
+    // 🔴 1. DELETE removed gallery images
+    const removedGallery = previousGallery.filter((img) => !retainedGallery.includes(img));
+    for (const url of removedGallery) {
       const publicId = getPublicIdFromUrl(url);
       if (publicId) await cloudinary.uploader.destroy(publicId);
     }
 
-    // ✅ Upload new gallery images
-    let newGalleryUrls = [];
+    // ✅ 2. ADD new gallery images (upload)
+    let uploadedGallery = [];
     if (req.files?.newGalleryImages?.length) {
       const uploads = await Promise.all(
         req.files.newGalleryImages.map((file) =>
-          cloudinary.uploader.upload(file.path, { folder: "GOA-TOUR-WALA" })
+          cloudinary.uploader.upload(file.path, {
+            folder: "GOA-TOUR-WALA",
+          })
         )
       );
-      newGalleryUrls = uploads.map((r) => r.secure_url);
+      uploadedGallery = uploads.map((res) => res.secure_url);
     }
 
-    // ✅ Final gallery = retained + new (without duplication)
-    updateData.galleryImages = [...parsedGallery, ...newGalleryUrls];
+    updateData.galleryImages = [...retainedGallery, ...uploadedGallery];
+
+    // 🔄 3. BANNER IMAGE: delete old one if replaced
+    if (req.files?.bannerImage?.[0]) {
+      const oldBanner = existingSub.bannerImage;
+      if (oldBanner) {
+        const bannerPublicId = getPublicIdFromUrl(oldBanner);
+        if (bannerPublicId) await cloudinary.uploader.destroy(bannerPublicId);
+      }
+
+      const uploaded = await cloudinary.uploader.upload(
+        req.files.bannerImage[0].path,
+        { folder: "GOA-TOUR-WALA" }
+      );
+      updateData.bannerImage = uploaded.secure_url;
+    } else {
+      updateData.bannerImage = existingSub.bannerImage;
+    }
 
     const updated = await Subcategory.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -350,7 +343,11 @@ exports.updateSubcategory = async (req, res) => {
       subcategory: updated,
     });
   } catch (err) {
-    console.error("Update Subcategory Error:", err);
+    console.error("Update Error:", err);
     res.status(500).json({ error: "Failed to update subcategory" });
   }
 };
+
+
+
+

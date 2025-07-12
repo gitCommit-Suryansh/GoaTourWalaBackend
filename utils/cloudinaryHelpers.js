@@ -1,15 +1,16 @@
 // utils/cloudinaryHelpers.js
-function getPublicIdFromUrl(url) {
-    try {
-      const parts = url.split('/');
-      const folderIndex = parts.findIndex((part) => part === 'upload') + 1;
-      const publicIdWithExtension = parts.slice(folderIndex).join('/');
-      const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, ''); // remove file extension
-      return publicId;
-    } catch {
-      return null;
-    }
+// 👇 Helper function
+const getPublicIdFromUrl = (url) => {
+  try {
+    const parts = url.split("/");
+    const fileWithExt = parts[parts.length - 1];
+    const publicId = fileWithExt.split(".")[0]; // Remove extension
+    return `GOA-TOUR-WALA/${publicId}`;
+  } catch {
+    return null;
   }
+};
+
   
-  module.exports = { getPublicIdFromUrl };
+  module.exports = getPublicIdFromUrl;
   
