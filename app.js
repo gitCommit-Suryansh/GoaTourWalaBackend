@@ -7,6 +7,8 @@ const PORT = process.env.PORT || 5000;
 const subcategoryRoutes = require('./routes/subcategoryRoutes.js');
 const categoryRoutes = require('./routes/categoryRoutes.js');
 const phonepeRoutes=require('./routes/phonepeRoutes.js')
+const paymentRoutes=require('./routes/payment.js')
+const adminRoutes=require('./routes/adminRoutes.js')
 
 
 
@@ -20,6 +22,8 @@ connectToDB();
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
 app.use('/api/phonepe',phonepeRoutes)
+app.use('/api/payment',paymentRoutes)
+app.use('/api/admin',adminRoutes)
 
 
 app.listen(PORT, () => {
