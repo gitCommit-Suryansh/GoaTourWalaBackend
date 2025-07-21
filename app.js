@@ -9,6 +9,7 @@ const categoryRoutes = require('./routes/categoryRoutes.js');
 const phonepeRoutes=require('./routes/phonepeRoutes.js')
 const paymentRoutes=require('./routes/payment.js')
 const adminRoutes=require('./routes/adminRoutes.js')
+const planTripRoutes = require("./routes/planTrip");
 
 
 
@@ -24,6 +25,8 @@ app.use('/api/subcategories', subcategoryRoutes);
 app.use('/api/phonepe',phonepeRoutes)
 app.use('/api/payment',paymentRoutes)
 app.use('/api/admin',adminRoutes)
+app.use("/api/plan-trip", planTripRoutes);
+
 
 
 app.listen(PORT, () => {
