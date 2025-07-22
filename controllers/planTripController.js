@@ -11,3 +11,13 @@ exports.submitPlannedTrip = async (req, res) => {
     res.status(500).json({ message: "Failed to plan trip" });
   }
 };
+
+exports.getAllPlans = async (req, res) => {
+  try {
+    const plans = await PlannedTrip.find().sort({ createdAt: -1 });
+    res.status(200).json({ plans });
+  } catch (error) {
+    console.error("Error fetching plans:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
